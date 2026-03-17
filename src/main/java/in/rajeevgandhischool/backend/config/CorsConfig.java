@@ -18,11 +18,15 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
+<<<<<<< HEAD
         config.setAllowedOrigins(Arrays.asList(
                 frontendUrl,
                 "http://localhost:5173",
                 "https://www.rajeevgandhischool.in",
                 "https://rajeevgandhischool.in"));
+=======
+        config.setAllowedOrigins(Arrays.asList(frontendUrl, "http://localhost:5173", "https://www.rajeevgandhischool.in"));
+>>>>>>> eb821e47976ebc756f9b7b0d1d10fdeedb746dfb
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);
