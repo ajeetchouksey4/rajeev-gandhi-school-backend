@@ -12,6 +12,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/enquiries")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class EnquiryController {
 
     private final EnquiryRepository enquiryRepository;
