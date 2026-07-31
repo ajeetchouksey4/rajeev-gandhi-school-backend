@@ -20,22 +20,61 @@ public class Enquiry {
     @Column(nullable = false)
     private String studentName;
 
-    @Column(nullable = false)
-    private String classApplyingFor;
+    private String parentName;
 
-    @Column(nullable = false)
+    @Column(name = "parent_phone")
     private String parentPhone;
+
+    @Column(name = "class_applying_for")
+    private String classApplyingFor;
 
     private String parentEmail;
 
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false)
+    private EnquiryStatus status = EnquiryStatus.NEW;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isRead = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Helper getters/setters to support both property naming styles (phone/parentPhone, classAppliedFor/classApplyingFor)
+    public String getPhone() {
+        return parentPhone != null ? parentPhone : "";
+    }
+
+    public void setPhone(String phone) {
+        this.parentPhone = phone;
+    }
+
+    public String getClassAppliedFor() {
+        return classApplyingFor != null ? classApplyingFor : "";
+    }
+
+    public void setClassAppliedFor(String classAppliedFor) {
+        this.classApplyingFor = classAppliedFor;
+    }
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.status == null) {
+            this.status = EnquiryStatus.NEW;
+        }
+        if (this.isRead == null) {
+            this.isRead = false;
+        }
+        if (this.parentName == null || this.parentName.trim().isEmpty()) {
+            this.parentName = "Parent / Guardian";
+        }
     }
 }
