@@ -1,6 +1,7 @@
 package in.rajeevgandhischool.backend.controller;
 
 import in.rajeevgandhischool.backend.entity.Enquiry;
+import in.rajeevgandhischool.backend.entity.EnquiryCategory;
 import in.rajeevgandhischool.backend.entity.EnquiryStatus;
 import in.rajeevgandhischool.backend.repository.EnquiryRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,9 @@ public class EnquiryController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> submitEnquiry(@RequestBody Enquiry enquiry) {
+        if (enquiry.getCategory() == null) {
+            enquiry.setCategory(EnquiryCategory.ADMISSION);
+        }
         if (enquiry.getStatus() == null) {
             enquiry.setStatus(EnquiryStatus.NEW);
         }
@@ -41,9 +45,17 @@ public class EnquiryController {
 
     @GetMapping
     public ResponseEntity<List<Enquiry>> getAllEnquiries(
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String search) {
         
+        EnquiryCategory categoryEnum = null;
+        if (category != null && !category.isBlank() && !category.equalsIgnoreCase("ALL")) {
+            try {
+                categoryEnum = EnquiryCategory.valueOf(category.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
         EnquiryStatus statusEnum = null;
         if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
             try {
@@ -51,7 +63,7 @@ public class EnquiryController {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        List<Enquiry> results = enquiryRepository.searchEnquiries(statusEnum, search);
+        List<Enquiry> results = enquiryRepository.searchEnquiries(categoryEnum, statusEnum, search);
         return ResponseEntity.ok(results);
     }
 
@@ -98,7 +110,10 @@ public class EnquiryController {
     }
 
     @GetMapping("/analytics")
-    public ResponseEntity<Map<String, Object>> getAnalytics(@RequestParam(defaultValue = "week") String range) {
+    public ResponseEntity<Map<String, Object>> getAnalytics(
+            @RequestParam(defaultValue = "week") String range,
+            @RequestParam(required = false) String category) {
+        
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate;
         
@@ -107,11 +122,22 @@ public class EnquiryController {
         } else if ("month".equalsIgnoreCase(range)) {
             startDate = now.minusDays(27).withHour(0).withMinute(0).withSecond(0);
         } else {
-            // default: week (7 days)
             startDate = now.minusDays(6).withHour(0).withMinute(0).withSecond(0);
         }
 
-        List<Enquiry> periodEnquiries = enquiryRepository.findByCreatedAtGreaterThanEqualOrderByCreatedAtAsc(startDate);
+        List<Enquiry> rawEnquiries = enquiryRepository.findByCreatedAtGreaterThanEqualOrderByCreatedAtAsc(startDate);
+
+        EnquiryCategory filterCat = null;
+        if (category != null && !category.isBlank() && !category.equalsIgnoreCase("ALL")) {
+            try {
+                filterCat = EnquiryCategory.valueOf(category.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        final EnquiryCategory targetCat = filterCat;
+        List<Enquiry> periodEnquiries = rawEnquiries.stream()
+                .filter(e -> targetCat == null || e.getCategory() == targetCat)
+                .collect(Collectors.toList());
 
         // Status breakdown
         Map<String, Long> statusBreakdown = new HashMap<>();
@@ -127,11 +153,24 @@ public class EnquiryController {
             }
         }
 
+        // Category breakdown
+        Map<String, Long> categoryBreakdown = new HashMap<>();
+        categoryBreakdown.put("ADMISSION", 0L);
+        categoryBreakdown.put("GENERAL", 0L);
+        categoryBreakdown.put("CAREER", 0L);
+        categoryBreakdown.put("BUSINESS", 0L);
+
+        for (Enquiry e : rawEnquiries) {
+            if (e.getCategory() != null) {
+                String cName = e.getCategory().name();
+                categoryBreakdown.put(cName, categoryBreakdown.getOrDefault(cName, 0L) + 1);
+            }
+        }
+
         // Timeline aggregation
         List<Map<String, Object>> timeline = new ArrayList<>();
 
         if ("year".equalsIgnoreCase(range)) {
-            // Group month-wise for 12 months
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
             for (int i = 11; i >= 0; i--) {
                 LocalDateTime mStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
@@ -145,7 +184,6 @@ public class EnquiryController {
                 timeline.add(Map.of("label", label, "count", count));
             }
         } else if ("month".equalsIgnoreCase(range)) {
-            // Group week-wise for 4 weeks
             for (int i = 3; i >= 0; i--) {
                 LocalDateTime wStart = now.minusDays((i + 1) * 7 - 1).withHour(0).withMinute(0).withSecond(0);
                 LocalDateTime wEnd = wStart.plusDays(7);
@@ -158,7 +196,6 @@ public class EnquiryController {
                 timeline.add(Map.of("label", label, "count", count));
             }
         } else {
-            // Group day-wise for 7 days
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM");
             for (int i = 6; i >= 0; i--) {
                 LocalDate day = LocalDate.now().minusDays(i);
@@ -176,6 +213,7 @@ public class EnquiryController {
         result.put("range", range);
         result.put("total", periodEnquiries.size());
         result.put("statusBreakdown", statusBreakdown);
+        result.put("categoryBreakdown", categoryBreakdown);
         result.put("timeline", timeline);
 
         return ResponseEntity.ok(result);

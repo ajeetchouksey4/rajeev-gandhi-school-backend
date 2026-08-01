@@ -17,7 +17,11 @@ public class Enquiry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false)
+    private EnquiryCategory category = EnquiryCategory.ADMISSION;
+
     private String studentName;
 
     private String parentName;
@@ -45,7 +49,7 @@ public class Enquiry {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Helper getters/setters to support both property naming styles (phone/parentPhone, classAppliedFor/classApplyingFor)
+    // Helper getters/setters to support both property naming styles
     public String getPhone() {
         return parentPhone != null ? parentPhone : "";
     }
@@ -67,6 +71,9 @@ public class Enquiry {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }
+        if (this.category == null) {
+            this.category = EnquiryCategory.ADMISSION;
+        }
         if (this.status == null) {
             this.status = EnquiryStatus.NEW;
         }
@@ -74,7 +81,7 @@ public class Enquiry {
             this.isRead = false;
         }
         if (this.parentName == null || this.parentName.trim().isEmpty()) {
-            this.parentName = "Parent / Guardian";
+            this.parentName = "Visitor / Applicant";
         }
     }
 }
