@@ -84,4 +84,26 @@ public class GalleryController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateGalleryImage(@PathVariable Long id, @RequestBody GalleryImage updatedData) {
+        return galleryImageRepository.findById(id)
+                .map(existing -> {
+                    if (updatedData.getImageUrl() != null && !updatedData.getImageUrl().isBlank()) {
+                        existing.setImageUrl(updatedData.getImageUrl());
+                    }
+                    if (updatedData.getCategory() != null) {
+                        existing.setCategory(updatedData.getCategory());
+                    }
+                    existing.setTitle(updatedData.getTitle());
+                    existing.setDescription(updatedData.getDescription());
+                    existing.setEventDate(updatedData.getEventDate());
+                    if (updatedData.getDisplayOrder() != null) {
+                        existing.setDisplayOrder(updatedData.getDisplayOrder());
+                    }
+                    GalleryImage saved = galleryImageRepository.save(existing);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }
