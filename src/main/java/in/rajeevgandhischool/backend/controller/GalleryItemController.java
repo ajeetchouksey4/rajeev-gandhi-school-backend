@@ -58,7 +58,7 @@ public class GalleryItemController {
         for (int i = 0; i < items.size(); i++) {
             GalleryItem item = items.get(i);
             if (item.getId() != null) {
-                final int orderIndex = i + 1;
+                final int orderIndex = item.getDisplayOrder() != null ? item.getDisplayOrder() : (i + 1);
                 galleryItemRepository.findById(item.getId()).ifPresent(existing -> {
                     existing.setDisplayOrder(orderIndex);
                     if (item.getSection() != null) {
