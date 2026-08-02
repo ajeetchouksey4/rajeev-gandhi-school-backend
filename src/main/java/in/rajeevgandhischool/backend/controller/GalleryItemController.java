@@ -20,6 +20,30 @@ public class GalleryItemController {
     @GetMapping
     public ResponseEntity<List<GalleryItem>> getAllGalleryItems() {
         List<GalleryItem> items = galleryItemRepository.findAllByOrderByDisplayOrderAscIdAsc();
+
+        // Auto-migrate any null/blank section fields in database
+        boolean updatedAny = false;
+        for (GalleryItem item : items) {
+            if (item.getSection() == null || item.getSection().isBlank()) {
+                String cat = item.getCategory() != null ? item.getCategory().toLowerCase() : "";
+                String title = item.getTitle() != null ? item.getTitle().toLowerCase() : "";
+
+                if (cat.contains("facil") || title.contains("lab") || title.contains("class") || title.contains("librar") || title.contains("sport") || title.contains("transport")) {
+                    item.setSection("FACILITIES");
+                } else if (cat.contains("highl") || title.contains("championship") || title.contains("parade") || title.contains("exhibition")) {
+                    item.setSection("HIGHLIGHTS");
+                } else {
+                    item.setSection("GALLERY");
+                }
+                galleryItemRepository.save(item);
+                updatedAny = true;
+            }
+        }
+
+        if (updatedAny) {
+            items = galleryItemRepository.findAllByOrderByDisplayOrderAscIdAsc();
+        }
+
         return ResponseEntity.ok(items);
     }
 
