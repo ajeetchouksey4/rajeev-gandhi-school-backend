@@ -22,6 +22,9 @@ public class GalleryItem {
 
     private String category;
 
+    @Builder.Default
+    private String section = "GALLERY"; // "FACILITIES", "HIGHLIGHTS", "GALLERY"
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String imageUrl;
 
@@ -39,5 +42,8 @@ public class GalleryItem {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.section == null) {
+            this.section = "GALLERY";
+        }
     }
 }

@@ -25,6 +25,9 @@ public class GalleryItemController {
 
     @PostMapping
     public ResponseEntity<GalleryItem> createGalleryItem(@RequestBody GalleryItem item) {
+        if (item.getSection() == null || item.getSection().isBlank()) {
+            item.setSection("GALLERY");
+        }
         if (item.getDisplayOrder() == null || item.getDisplayOrder() == 0) {
             long count = galleryItemRepository.count();
             item.setDisplayOrder((int) count + 1);
@@ -39,6 +42,7 @@ public class GalleryItemController {
                 .map(existing -> {
                     if (updatedData.getTitle() != null) existing.setTitle(updatedData.getTitle());
                     if (updatedData.getCategory() != null) existing.setCategory(updatedData.getCategory());
+                    if (updatedData.getSection() != null) existing.setSection(updatedData.getSection());
                     if (updatedData.getImageUrl() != null) existing.setImageUrl(updatedData.getImageUrl());
                     if (updatedData.getPublicId() != null) existing.setPublicId(updatedData.getPublicId());
                     if (updatedData.getWide() != null) existing.setWide(updatedData.getWide());
@@ -57,6 +61,9 @@ public class GalleryItemController {
                 final int orderIndex = i + 1;
                 galleryItemRepository.findById(item.getId()).ifPresent(existing -> {
                     existing.setDisplayOrder(orderIndex);
+                    if (item.getSection() != null) {
+                        existing.setSection(item.getSection());
+                    }
                     galleryItemRepository.save(existing);
                 });
             }
