@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface GalleryItemRepository extends JpaRepository<GalleryItem, Long> {
     List<GalleryItem> findAllByOrderByDisplayOrderAscIdAsc();
+    long countBySection(String section);
 }
